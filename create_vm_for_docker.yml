@@ -1,0 +1,50 @@
+- name: Create a Proxmox VM from ISO
+  hosts: localhost
+  gather_facts: no
+  vars:
+    proxmox_api_url: "https://134.95.120.196:8006"
+    proxmox_api_user: "root@pam"
+    proxmox_api_token_id: "ansible"
+    proxmox_api_token_secret: "e4119115-45a1-4f26-b18c-ab29fb99897c"
+    proxmox_node: "nmadsrv2"
+    vmid: 101
+    vm_name: "DockerVM"
+    memory: 16384 
+    cores: 4
+    sockets: 1
+    disk_size: "265G"
+    iso_path: "NFS_10GBE:iso/alpine-standard-3.21.2-x86_64.iso"
+    network_bridge: "vmbr0"
+
+  tasks:
+    - name: Create VM
+      community.general.proxmox:
+        api_host: "{{ proxmox_api_url }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_token_id: "{{ proxmox_api_token_id }}"
+        api_token_secret: "{{ proxmox_api_token_secret }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ vmid }}"
+        name: "{{ vm_name }}"
+        memory: "{{ memory }}"
+        cores: "{{ cores }}"
+        sockets: "{{ sockets }}"
+        netif:
+          net0: "virtio,bridge={{ network_bridge }}"
+        boot: "order=scsi0;ide2"
+        ide:
+          ide2: "{{ iso_path }},media=cdrom"
+        scsi:
+          scsi0: "local-lvm:{{ disk_size }}"
+        state: present
+        onboot: yes
+
+    - name: Start VM
+      community.general.proxmox:
+        api_host: "{{ proxmox_api_url }}"
+        api_user: "{{ proxmox_api_user }}"
+        api_token_id: "{{ proxmox_api_token_id }}"
+        api_token_secret: "{{ proxmox_api_token_secret }}"
+        node: "{{ proxmox_node }}"
+        vmid: "{{ vmid }}"
+        state: started
