@@ -1,0 +1,34 @@
+---
+- name: Deploy Whisper AI Docker Container
+  hosts: all
+  become: yes
+  tasks:
+    - name: Start Docker Service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Pull Whisper AI Docker Image
+      docker_image:
+        name: ghcr.io/ggerganov/whisper.cpp
+        source: pull
+
+    - name: Run Whisper AI Container
+      docker_container:
+        name: whisper_ai
+        image: ghcr.io/ggerganov/whisper.cpp
+        state: started
+        restart_policy: always
+        volumes:
+          - /opt/whisperai/data:/data
+        command: ["bash"]
+
+    - name: Ensure Whisper AI Container is Running
+      shell: docker ps | grep whisper_ai
+      register: whisper_status
+      changed_when: false
+
+    - debug:
+        msg: "Whisper AI container is running successfully!"
+      when: whisper_status.rc == 0
